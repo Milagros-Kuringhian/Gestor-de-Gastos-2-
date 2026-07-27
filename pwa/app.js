@@ -14,7 +14,6 @@ const els = {
   empty: $("#empty-state"),
 
   modalMonto: $("#modal-monto"),
-  modalSheetMonto: $("#modal-monto .modal-sheet"),
   modalTitulo: $("#modal-titulo"),
   modalSub: $("#modal-sub"),
   inputMonto: $("#input-monto"),
@@ -476,7 +475,10 @@ function wireEvents() {
       return;
     }
     const btnBorrar = e.target.closest("[data-del]");
-    if (btnBorrar) borrarMovimiento(btnBorrar.dataset.del);
+    if (btnBorrar) {
+      if (!confirm("¿Borrar este movimiento?")) return;
+      borrarMovimiento(btnBorrar.dataset.del);
+    }
   });
 
   els.btnAjustes.addEventListener("click", abrirModalAjustes);
