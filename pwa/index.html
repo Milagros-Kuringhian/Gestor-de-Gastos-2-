@@ -85,6 +85,16 @@
       <div class="modal-backdrop" data-close></div>
       <div class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
         <h3 id="modal-titulo">Monto</h3>
+        <label class="sr-only" for="input-nombre-otros">Nombre del gasto</label>
+        <input
+          id="input-nombre-otros"
+          class="modal-titulo-input"
+          type="text"
+          maxlength="60"
+          placeholder="Nombre del gasto"
+          autocomplete="off"
+          hidden
+        />
         <p class="modal-sub" id="modal-sub"></p>
         <label class="sr-only" for="input-monto">Monto en pesos</label>
         <div class="monto-wrap">

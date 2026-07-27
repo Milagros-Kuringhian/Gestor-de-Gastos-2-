@@ -23,8 +23,10 @@ const els = {
   lista: $("#lista-movimientos"),
   empty: $("#empty-state"),
   modalMonto: $("#modal-monto"),
+  modalSheetMonto: $("#modal-monto .modal-sheet"),
   modalTitulo: $("#modal-titulo"),
   modalSub: $("#modal-sub"),
+  inputNombreOtros: $("#input-nombre-otros"),
   inputMonto: $("#input-monto"),
   btnGuardar: $("#btn-guardar"),
   modalAjustes: $("#modal-ajustes"),
@@ -226,16 +228,32 @@ function formatFechaCorta(iso) {
 
 function abrirModalMonto(cat) {
   categoriaActiva = cat;
-  els.modalTitulo.textContent = cat.nombre;
   els.modalSub.textContent = textoModalPorTipo(cat.tipo);
   els.inputMonto.value = "";
+  const esOtros = cat.id === "otros";
+  els.modalTitulo.hidden = esOtros;
+  els.inputNombreOtros.hidden = !esOtros;
+  if (esOtros) {
+    els.inputNombreOtros.value = "";
+    els.modalSheetMonto.setAttribute("aria-labelledby", "input-nombre-otros");
+  } else {
+    els.modalTitulo.textContent = cat.nombre;
+    els.modalSheetMonto.setAttribute("aria-labelledby", "modal-titulo");
+  }
   els.modalMonto.hidden = false;
-  setTimeout(() => els.inputMonto.focus(), 50);
+  setTimeout(() => {
+    if (esOtros) els.inputNombreOtros.focus();
+    else els.inputMonto.focus();
+  }, 50);
 }
 
 function cerrarModales() {
   els.modalMonto.hidden = true;
   els.modalAjustes.hidden = true;
+  els.inputNombreOtros.value = "";
+  els.inputNombreOtros.hidden = true;
+  els.modalTitulo.hidden = false;
+  els.modalSheetMonto.setAttribute("aria-labelledby", "modal-titulo");
   categoriaActiva = null;
 }
 
@@ -249,12 +267,16 @@ function guardarMovimiento() {
   }
 
   const tipo = categoriaActiva.tipo;
+  const nombre =
+    categoriaActiva.id === "otros"
+      ? els.inputNombreOtros.value.trim() || "Otros"
+      : categoriaActiva.nombre;
   state.movimientos.push({
     id:
       (crypto.randomUUID && crypto.randomUUID()) ||
       `m-${Date.now()}-${Math.random().toString(16).slice(2)}`,
     categoriaId: categoriaActiva.id,
-    nombre: categoriaActiva.nombre,
+    nombre,
     tipo,
     monto,
     fechaISO: hoyISO(),
@@ -317,6 +339,12 @@ function wireEvents() {
   });
 
   els.btnGuardar.addEventListener("click", guardarMovimiento);
+  els.inputNombreOtros.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      els.inputMonto.focus();
+    }
+  });
   els.inputMonto.addEventListener("keydown", (e) => {
     if (e.key === "Enter") guardarMovimiento();
   });
