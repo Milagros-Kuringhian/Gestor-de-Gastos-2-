@@ -39,10 +39,12 @@ npx vercel pwa --yes
 
 ### Cómo usarla
 
-1. **Ajustes** → poné tu saldo inicial
-2. Tocá **Cobré** o una categoría de gasto → monto → Guardar
-3. Arriba ves la **plata disponible**
-4. **Exportar CSV** cuando quieras un respaldo
+1. Arrancás con dos cards: **Ingreso** y **Egreso** (renombrables en Ajustes; no se borran).
+2. Tocá **Agregar** para crear más cards con el nombre que quieras.
+3. Tocá una card → monto + nota opcional → Guardar.
+4. En la lista podés **Editar** el monto o **Borrar**.
+5. **Ajustes** → saldo inicial; opcionalmente activá **Usar ahorro**.
+6. **Exportar CSV** cuando quieras un respaldo.
 
 ## Excel (opcional)
 
