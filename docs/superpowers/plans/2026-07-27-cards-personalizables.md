@@ -916,4 +916,5 @@ git commit -m "chore: caché v8 y README de cards personalizables"
 
 - Sin placeholders TBD.
 - API de estado consistente (`ok`/`state`/`error`) en todas las mutaciones excepto `borrarMovimiento` (devuelve state directo, igual que patrón simple).
-- `tagPorTipo` default usa asignación a `_exhaustive` para cumplir exhaustive-switch del workspace; en JS runtime no tipa, pero documenta intención.
+- `tagPorTipo` cubre ingreso/gasto/aporte/retiro; default `"Movimiento"`.
+- Plan alineado a la spec aprobada; verificación con `npm test` + checklist manual en Task 4.
