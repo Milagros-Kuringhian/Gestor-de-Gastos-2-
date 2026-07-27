@@ -24,7 +24,7 @@
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=7" />
+    <link rel="stylesheet" href="styles.css?v=8" />
   </head>
   <body>
     <div class="grain" aria-hidden="true"></div>
@@ -51,7 +51,7 @@
             <span>Gastado</span>
             <strong id="total-gastado">$0</strong>
           </div>
-          <div>
+          <div id="ahorro-total-wrap">
             <span>Ahorrado</span>
             <strong id="total-ahorrado">$0</strong>
           </div>
@@ -85,33 +85,54 @@
       <div class="modal-backdrop" data-close></div>
       <div class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
         <h3 id="modal-titulo">Monto</h3>
-        <label class="sr-only" for="input-nombre-otros">Nombre del gasto</label>
-        <input
-          id="input-nombre-otros"
-          class="modal-titulo-input"
-          type="text"
-          maxlength="60"
-          placeholder="Nombre del gasto"
-          autocomplete="off"
-          hidden
-        />
         <p class="modal-sub" id="modal-sub"></p>
         <label class="sr-only" for="input-monto">Monto en pesos</label>
         <div class="monto-wrap">
           <span>$</span>
-          <input
-            id="input-monto"
-            type="number"
-            inputmode="decimal"
-            min="0"
-            step="1"
-            placeholder="0"
-            autocomplete="off"
-          />
+          <input id="input-monto" type="number" inputmode="decimal" min="0" step="1" placeholder="0" autocomplete="off" />
         </div>
+        <label for="input-nota">Nota (opcional)</label>
+        <input id="input-nota" type="text" maxlength="80" placeholder="Ej. almuerzo" autocomplete="off" />
         <div class="modal-actions">
           <button type="button" class="btn-secondary" data-close>Cancelar</button>
           <button type="button" class="btn-primary" id="btn-guardar">Guardar</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal crear card -->
+    <div class="modal" id="modal-crear-card" hidden>
+      <div class="modal-backdrop" data-close></div>
+      <div class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="crear-card-titulo">
+        <h3 id="crear-card-titulo">Nueva card</h3>
+        <label for="select-tipo-card">Tipo</label>
+        <select id="select-tipo-card">
+          <option value="ingreso">Ingreso</option>
+          <option value="gasto">Egreso</option>
+        </select>
+        <label for="input-nombre-card">Nombre</label>
+        <input id="input-nombre-card" type="text" maxlength="40" placeholder="Ej. Pádel" autocomplete="off" />
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" data-close>Cancelar</button>
+          <button type="button" class="btn-primary" id="btn-guardar-card">Crear</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Modal editar monto -->
+    <div class="modal" id="modal-editar-monto" hidden>
+      <div class="modal-backdrop" data-close></div>
+      <div class="modal-sheet" role="dialog" aria-modal="true" aria-labelledby="editar-monto-titulo">
+        <h3 id="editar-monto-titulo">Editar monto</h3>
+        <p class="modal-sub" id="editar-monto-sub"></p>
+        <label class="sr-only" for="input-editar-monto">Monto</label>
+        <div class="monto-wrap">
+          <span>$</span>
+          <input id="input-editar-monto" type="number" inputmode="decimal" min="0" step="1" placeholder="0" />
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn-secondary" data-close>Cancelar</button>
+          <button type="button" class="btn-primary" id="btn-guardar-editar-monto">Guardar</button>
         </div>
       </div>
     </div>
@@ -133,22 +154,30 @@
             placeholder="0"
           />
         </div>
-        <label for="input-saldo-ahorro">Saldo inicial (ahorro)</label>
-        <div class="monto-wrap">
-          <span>$</span>
-          <input
-            id="input-saldo-ahorro"
-            type="number"
-            inputmode="decimal"
-            min="0"
-            step="1"
-            placeholder="0"
-          />
+        <label class="toggle-row" for="toggle-ahorro">
+          <span>Usar ahorro</span>
+          <input type="checkbox" id="toggle-ahorro" />
+        </label>
+        <div id="bloque-saldo-ahorro">
+          <label for="input-saldo-ahorro">Saldo inicial (ahorro)</label>
+          <div class="monto-wrap">
+            <span>$</span>
+            <input
+              id="input-saldo-ahorro"
+              type="number"
+              inputmode="decimal"
+              min="0"
+              step="1"
+              placeholder="0"
+            />
+          </div>
         </div>
         <p class="hint">
           Disponible: plata líquida para gastar. Ahorro: lo que ya tenías
           guardado. Pasar a ahorro baja el disponible pero no cuenta como gasto.
         </p>
+        <h4 class="ajustes-subtitulo">Tus cards</h4>
+        <ul id="lista-cards-ajustes" class="lista-cards-ajustes"></ul>
         <div class="modal-actions">
           <button type="button" class="btn-secondary" data-close>Cerrar</button>
           <button type="button" class="btn-primary" id="btn-guardar-saldo">
@@ -160,6 +189,7 @@
 
     <div class="toast" id="toast" hidden></div>
 
-    <script src="app.js?v=7"></script>
+    <script src="state.js?v=8"></script>
+    <script src="app.js?v=8"></script>
   </body>
 </html>
