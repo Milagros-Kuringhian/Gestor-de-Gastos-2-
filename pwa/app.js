@@ -56,7 +56,13 @@ function loadState() {
     }
     const rawV1 = localStorage.getItem(S.STORAGE_KEY_V1);
     if (rawV1) {
-      const migrated = S.normalizeState(S.migrateV1ToV2(JSON.parse(rawV1)));
+      let migrated;
+      try {
+        migrated = S.normalizeState(S.migrateV1ToV2(JSON.parse(rawV1)));
+      } catch {
+        // Migración a medias: no tocamos v1 ni escribimos v2, arrancamos limpio.
+        return S.defaultState();
+      }
       localStorage.setItem(S.STORAGE_KEY_V2, JSON.stringify(migrated));
       localStorage.removeItem(S.STORAGE_KEY_V1);
       return migrated;
@@ -271,14 +277,21 @@ function abrirModalAjustes() {
 
 function renderListaCardsAjustes() {
   els.listaCardsAjustes.innerHTML = state.cards
-    .map(
-      (card) => `
+    .map((card) => {
+      const oculta =
+        !state.ahorroActivo && (card.tipo === "aporte" || card.tipo === "retiro");
+      const hint = oculta ? `<span class="hint-oculta">ocultas en inicio</span>` : "";
+      return `
     <li>
-      <input type="text" value="${escapeHtml(card.nombre)}" maxlength="40" data-rename="${card.id}" />
+      <div class="ajuste-card-info">
+        <span class="tag-mini">${S.tagPorTipo(card.tipo)}</span>
+        <input type="text" value="${escapeHtml(card.nombre)}" maxlength="40" data-rename="${card.id}" />
+        ${hint}
+      </div>
       <button type="button" class="btn-secondary" data-guardar-nombre="${card.id}">Guardar</button>
       <button type="button" class="btn-borrar" data-borrar-card="${card.id}" ${card.obligatoria ? "disabled" : ""}>Borrar</button>
-    </li>`
-    )
+    </li>`;
+    })
     .join("");
 }
 
@@ -475,10 +488,7 @@ function wireEvents() {
       return;
     }
     const btnBorrar = e.target.closest("[data-del]");
-    if (btnBorrar) {
-      if (!confirm("¿Borrar este movimiento?")) return;
-      borrarMovimiento(btnBorrar.dataset.del);
-    }
+    if (btnBorrar) borrarMovimiento(btnBorrar.dataset.del);
   });
 
   els.btnAjustes.addEventListener("click", abrirModalAjustes);

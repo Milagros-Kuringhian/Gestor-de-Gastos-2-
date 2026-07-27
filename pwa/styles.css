@@ -124,7 +124,7 @@ body {
 
 .balance-row {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+  grid-template-columns: 1fr 1fr 1fr;
   gap: 0.75rem;
   padding-top: 0.85rem;
   border-top: 1px solid rgba(255, 255, 255, 0.18);
@@ -347,25 +347,16 @@ body {
   font-size: 0.8rem;
   font-weight: 500;
   cursor: pointer;
-  padding: 0.5rem 0.6rem;
+  padding: 0.25rem 0.35rem;
 }
 
-.lista .acciones {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
-
-.lista .btn-editar,
-.lista .btn-borrar {
+.lista .btn-editar {
   border: none;
   background: transparent;
   color: var(--muted);
   font: inherit;
   font-size: 0.8rem;
   cursor: pointer;
-  padding: 0.5rem 0.6rem;
-  border-radius: 8px;
 }
 
 .empty {
@@ -422,6 +413,36 @@ body {
   font-weight: 600;
 }
 
+.modal-titulo-input {
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0.35rem 0.5rem;
+  border: 1.5px solid var(--line);
+  border-radius: 10px;
+  background: #fff;
+  color: var(--ink);
+  font: inherit;
+  font-size: 1.15rem;
+  font-weight: 600;
+  outline: none;
+}
+
+.modal-titulo-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(15, 90, 80, 0.15);
+}
+
+.modal-titulo-input::placeholder {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.modal-titulo-input[hidden],
+#modal-titulo[hidden] {
+  display: none !important;
+}
+
 .modal-sub {
   margin: 0.25rem 0 1rem;
   color: var(--muted);
@@ -448,8 +469,7 @@ body {
   font: inherit;
 }
 
-.toggle-row,
-.modal-sheet label.toggle-row {
+.toggle-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -473,6 +493,27 @@ body {
   align-items: center;
   padding: 0.5rem 0;
   border-bottom: 1px solid var(--line);
+}
+
+.ajuste-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.tag-mini {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.hint-oculta {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-style: italic;
 }
 
 .lista-cards-ajustes input[type="text"] {

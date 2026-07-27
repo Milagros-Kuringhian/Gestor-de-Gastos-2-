@@ -154,6 +154,21 @@ test("normalizeState maneja objeto vacío o inválido sin tirar error", () => {
   assert.equal(s2.cards.length, 2);
 });
 
+test("normalizeState sanea movimientos con monto inválido y fecha faltante", () => {
+  const s = normalizeState({
+    cards: [{ id: CARD_INGRESO_BASE_ID, nombre: "Ingreso", tipo: "ingreso", obligatoria: true }],
+    movimientos: [
+      { id: "m1", cardId: CARD_INGRESO_BASE_ID, nombre: "X", tipo: "ingreso", monto: "no-es-numero" },
+      { id: "m2", cardId: CARD_INGRESO_BASE_ID, nombre: "Y", tipo: "ingreso", monto: 50, fechaISO: "2026-02-02" },
+    ],
+  });
+  assert.equal(s.movimientos[0].monto, 0);
+  assert.equal(typeof s.movimientos[0].fechaISO, "string");
+  assert.ok(s.movimientos[0].fechaISO.length > 0);
+  assert.equal(s.movimientos[1].monto, 50);
+  assert.equal(s.movimientos[1].fechaISO, "2026-02-02");
+});
+
 test("editarMontoMovimiento", () => {
   let s = defaultState();
   s = agregarMovimiento(s, {
@@ -265,19 +280,4 @@ test("migrateV1ToV2 activa ahorroActivo cuando hay aportes o retiros", () => {
   };
   const s = migrateV1ToV2(v1);
   assert.equal(s.ahorroActivo, true);
-});
-
-test("normalizeState sanea movimientos con monto inválido y fecha faltante", () => {
-  const s = normalizeState({
-    cards: [{ id: CARD_INGRESO_BASE_ID, nombre: "Ingreso", tipo: "ingreso", obligatoria: true }],
-    movimientos: [
-      { id: "m1", cardId: CARD_INGRESO_BASE_ID, nombre: "X", tipo: "ingreso", monto: "no-es-numero" },
-      { id: "m2", cardId: CARD_INGRESO_BASE_ID, nombre: "Y", tipo: "ingreso", monto: 50, fechaISO: "2026-02-02" },
-    ],
-  });
-  assert.equal(s.movimientos[0].monto, 0);
-  assert.equal(typeof s.movimientos[0].fechaISO, "string");
-  assert.ok(s.movimientos[0].fechaISO.length > 0);
-  assert.equal(s.movimientos[1].monto, 50);
-  assert.equal(s.movimientos[1].fechaISO, "2026-02-02");
 });
