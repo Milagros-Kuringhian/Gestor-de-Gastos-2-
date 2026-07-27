@@ -1,4 +1,4 @@
-const CACHE = "mis-gastos-v8";
+const CACHE = "mis-gastos-v9";
 const ASSETS = [
   "./",
   "./index.html",
@@ -30,6 +30,7 @@ function isAppShell(url) {
     path.endsWith("/index.html") ||
     path.endsWith("/index") ||
     path.endsWith("/app.js") ||
+    path.endsWith("/state.js") ||
     path.endsWith("/styles.css") ||
     path.endsWith("manifest.webmanifest")
   );

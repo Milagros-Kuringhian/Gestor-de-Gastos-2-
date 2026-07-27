@@ -53,11 +53,11 @@ function loadState() {
   try {
     const rawV2 = localStorage.getItem(S.STORAGE_KEY_V2);
     if (rawV2) {
-      return S.ensureBaseCards({ ...S.defaultState(), ...JSON.parse(rawV2) });
+      return S.normalizeState(JSON.parse(rawV2));
     }
     const rawV1 = localStorage.getItem(S.STORAGE_KEY_V1);
     if (rawV1) {
-      const migrated = S.migrateV1ToV2(JSON.parse(rawV1));
+      const migrated = S.normalizeState(S.migrateV1ToV2(JSON.parse(rawV1)));
       localStorage.setItem(S.STORAGE_KEY_V2, JSON.stringify(migrated));
       localStorage.removeItem(S.STORAGE_KEY_V1);
       return migrated;
@@ -384,7 +384,7 @@ function renombrarCardDesdeAjustes(cardId) {
   state = resultado.state;
   saveState();
   refrescar();
-  renderListaCardsAjustes();
+  input.value = state.cards.find((c) => c.id === cardId)?.nombre ?? input.value;
   showToast("Nombre actualizado");
 }
 
@@ -397,7 +397,8 @@ function borrarCardDesdeAjustes(cardId) {
   state = resultado.state;
   saveState();
   refrescar();
-  renderListaCardsAjustes();
+  const li = els.listaCardsAjustes.querySelector(`[data-borrar-card="${cardId}"]`)?.closest("li");
+  li?.remove();
   showToast("Card borrada");
 }
 

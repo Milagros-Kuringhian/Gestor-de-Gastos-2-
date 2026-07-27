@@ -55,6 +55,42 @@ const MiPlataState = (() => {
     return { ...state, cards };
   }
 
+  function todayISO() {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+
+  function normalizeMovimiento(m) {
+    const item = m && typeof m === "object" ? m : {};
+    const monto = Number(item.monto);
+    return {
+      id: item.id || newId("m"),
+      cardId: item.cardId,
+      nombre: item.nombre || "",
+      nota: item.nota || "",
+      tipo: item.tipo || "gasto",
+      monto: Number.isFinite(monto) ? monto : 0,
+      fechaISO: item.fechaISO || todayISO(),
+      createdAt: item.createdAt || Date.now(),
+    };
+  }
+
+  function normalizeState(parsed) {
+    const base = defaultState();
+    const src = parsed && typeof parsed === "object" ? parsed : {};
+    const movimientosRaw = Array.isArray(src.movimientos) ? src.movimientos : [];
+    const merged = {
+      ...base,
+      ...src,
+      saldoInicial: Number(src.saldoInicial) || 0,
+      saldoAhorroInicial: Number(src.saldoAhorroInicial) || 0,
+      ahorroActivo: Boolean(src.ahorroActivo),
+      cards: Array.isArray(src.cards) && src.cards.length ? src.cards : base.cards,
+      movimientos: movimientosRaw.map(normalizeMovimiento),
+    };
+    return ensureBaseCards(merged);
+  }
+
   function migrateV1ToV2(v1) {
     const base = defaultState();
     base.saldoInicial = Number(v1.saldoInicial) || 0;
@@ -255,6 +291,7 @@ const MiPlataState = (() => {
     defaultState,
     migrateV1ToV2,
     ensureBaseCards,
+    normalizeState,
     totales,
     crearCard,
     renombrarCard,
