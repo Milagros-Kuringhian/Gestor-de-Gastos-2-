@@ -231,12 +231,16 @@ function abrirModalMonto(cat) {
   els.modalSub.textContent = textoModalPorTipo(cat.tipo);
   els.inputMonto.value = "";
   const esOtros = cat.id === "otros";
-  els.modalTitulo.hidden = esOtros;
-  els.inputNombreOtros.hidden = !esOtros;
   if (esOtros) {
+    els.modalTitulo.hidden = true;
+    els.inputNombreOtros.hidden = false;
     els.inputNombreOtros.value = "";
+    els.inputNombreOtros.placeholder = "Nombre del gasto";
     els.modalSheetMonto.setAttribute("aria-labelledby", "input-nombre-otros");
   } else {
+    els.inputNombreOtros.hidden = true;
+    els.inputNombreOtros.value = "";
+    els.modalTitulo.hidden = false;
     els.modalTitulo.textContent = cat.nombre;
     els.modalSheetMonto.setAttribute("aria-labelledby", "modal-titulo");
   }

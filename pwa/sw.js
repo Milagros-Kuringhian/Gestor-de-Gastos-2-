@@ -1,4 +1,4 @@
-const CACHE = "mis-gastos-v6";
+const CACHE = "mis-gastos-v7";
 const ASSETS = [
   "./",
   "./index.html",
@@ -22,15 +22,26 @@ self.addEventListener("activate", (event) => {
   );
 });
 
+function isAppShell(url) {
+  const path = url.pathname;
+  return (
+    path.endsWith("/") ||
+    path.endsWith("/index.html") ||
+    path.endsWith("/index") ||
+    path.endsWith("/app.js") ||
+    path.endsWith("/styles.css") ||
+    path.endsWith("manifest.webmanifest")
+  );
+}
+
 self.addEventListener("fetch", (event) => {
   const req = event.request;
   if (req.method !== "GET") return;
 
   const url = new URL(req.url);
-  const isManifest = url.pathname.endsWith("manifest.webmanifest");
 
-  // El nombre de la app no debe quedar atrapado en caché vieja.
-  if (isManifest) {
+  // HTML/JS/CSS: red primero para no quedar con versión vieja.
+  if (isAppShell(url)) {
     event.respondWith(
       fetch(req)
         .then((res) => {
