@@ -1,15 +1,4 @@
-const STORAGE_KEY = "mi-plata-v1";
-
-const CATEGORIAS = [
-  { id: "cobre", nombre: "Cobré", tipo: "ingreso", tag: "Ingreso" },
-  { id: "padel", nombre: "Pádel", tipo: "gasto", tag: "Gasto" },
-  { id: "facultad", nombre: "Facultad", tipo: "gasto", tag: "Gasto" },
-  { id: "transporte", nombre: "Transporte", tipo: "gasto", tag: "Gasto" },
-  { id: "hormiga", nombre: "Gastos hormiga", tipo: "gasto", tag: "Gasto" },
-  { id: "otros", nombre: "Otros", tipo: "gasto", tag: "Gasto" },
-  { id: "ahorre", nombre: "Ahorré", tipo: "aporte", tag: "Ahorro" },
-  { id: "retire", nombre: "Retiré", tipo: "retiro", tag: "Ahorro" },
-];
+const S = MiPlataState;
 
 const $ = (sel) => document.querySelector(sel);
 
@@ -19,54 +8,76 @@ const els = {
   cobrado: $("#total-cobrado"),
   gastado: $("#total-gastado"),
   ahorrado: $("#total-ahorrado"),
+  ahorroTotalWrap: $("#ahorro-total-wrap"),
   grid: $("#cat-grid"),
   lista: $("#lista-movimientos"),
   empty: $("#empty-state"),
+
   modalMonto: $("#modal-monto"),
   modalSheetMonto: $("#modal-monto .modal-sheet"),
   modalTitulo: $("#modal-titulo"),
   modalSub: $("#modal-sub"),
-  inputNombreOtros: $("#input-nombre-otros"),
   inputMonto: $("#input-monto"),
+  inputNota: $("#input-nota"),
   btnGuardar: $("#btn-guardar"),
+
+  modalCrearCard: $("#modal-crear-card"),
+  selectTipoCard: $("#select-tipo-card"),
+  inputNombreCard: $("#input-nombre-card"),
+  btnGuardarCard: $("#btn-guardar-card"),
+
+  modalEditarMonto: $("#modal-editar-monto"),
+  editarMontoSub: $("#editar-monto-sub"),
+  inputEditarMonto: $("#input-editar-monto"),
+  btnGuardarEditarMonto: $("#btn-guardar-editar-monto"),
+
   modalAjustes: $("#modal-ajustes"),
   inputSaldo: $("#input-saldo"),
+  toggleAhorro: $("#toggle-ahorro"),
+  bloqueSaldoAhorro: $("#bloque-saldo-ahorro"),
   inputSaldoAhorro: $("#input-saldo-ahorro"),
+  listaCardsAjustes: $("#lista-cards-ajustes"),
   btnAjustes: $("#btn-ajustes"),
   btnGuardarSaldo: $("#btn-guardar-saldo"),
+
   btnExportar: $("#btn-exportar"),
   installHint: $("#install-hint"),
   toast: $("#toast"),
 };
 
 let state = loadState();
-let categoriaActiva = null;
-
-function defaultState() {
-  return {
-    saldoInicial: 0,
-    saldoAhorroInicial: 0,
-    movimientos: [],
-  };
-}
+let cardActiva = null;
+let movEditandoId = null;
 
 function loadState() {
   try {
-    const raw = localStorage.getItem(STORAGE_KEY);
-    if (!raw) return defaultState();
-    const parsed = JSON.parse(raw);
-    return {
-      saldoInicial: Number(parsed.saldoInicial) || 0,
-      saldoAhorroInicial: Number(parsed.saldoAhorroInicial) || 0,
-      movimientos: Array.isArray(parsed.movimientos) ? parsed.movimientos : [],
-    };
+    const rawV2 = localStorage.getItem(S.STORAGE_KEY_V2);
+    if (rawV2) {
+      return S.ensureBaseCards({ ...S.defaultState(), ...JSON.parse(rawV2) });
+    }
+    const rawV1 = localStorage.getItem(S.STORAGE_KEY_V1);
+    if (rawV1) {
+      const migrated = S.migrateV1ToV2(JSON.parse(rawV1));
+      localStorage.setItem(S.STORAGE_KEY_V2, JSON.stringify(migrated));
+      localStorage.removeItem(S.STORAGE_KEY_V1);
+      return migrated;
+    }
   } catch {
-    return defaultState();
+    /* fallthrough */
   }
+  return S.defaultState();
 }
 
 function saveState() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+  localStorage.setItem(S.STORAGE_KEY_V2, JSON.stringify(state));
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
 }
 
 function formatARS(n) {
@@ -93,42 +104,13 @@ function hoyISO() {
   return `${y}-${m}-${day}`;
 }
 
-function totales() {
-  let cobrado = 0;
-  let gastado = 0;
-  let aportes = 0;
-  let retiros = 0;
-
-  for (const mov of state.movimientos) {
-    switch (mov.tipo) {
-      case "ingreso":
-        cobrado += mov.monto;
-        break;
-      case "gasto":
-        gastado += mov.monto;
-        break;
-      case "aporte":
-        aportes += mov.monto;
-        break;
-      case "retiro":
-        retiros += mov.monto;
-        break;
-      default:
-        // Movimientos viejos sin tipo conocido: tratar como gasto.
-        gastado += mov.monto;
-        break;
-    }
-  }
-
-  return {
-    cobrado,
-    gastado,
-    aportes,
-    retiros,
-    ahorrado: state.saldoAhorroInicial + aportes - retiros,
-    disponible:
-      state.saldoInicial + cobrado - gastado - aportes + retiros,
-  };
+function formatFechaCorta(iso) {
+  const [y, m, d] = iso.split("-").map(Number);
+  const date = new Date(y, m - 1, d);
+  return new Intl.DateTimeFormat("es-AR", {
+    day: "numeric",
+    month: "short",
+  }).format(date);
 }
 
 function textoModalPorTipo(tipo) {
@@ -175,22 +157,32 @@ function signoPorTipo(tipo) {
 }
 
 function renderCategorias() {
-  els.grid.innerHTML = CATEGORIAS.map(
-    (cat) => `
+  const cards = S.visibleCards(state);
+  const btns = cards
+    .map(
+      (cat) => `
     <button type="button" class="cat-btn ${cat.tipo}" data-id="${cat.id}">
-      <span class="tag">${cat.tag}</span>
-      <span class="name">${cat.nombre}</span>
+      <span class="tag">${S.tagPorTipo(cat.tipo)}</span>
+      <span class="name">${escapeHtml(cat.nombre)}</span>
     </button>`
-  ).join("");
+    )
+    .join("");
+  const add = `
+    <button type="button" class="cat-btn add-card" id="btn-agregar-card">
+      <span class="tag">Nueva</span>
+      <span class="name">Agregar</span>
+    </button>`;
+  els.grid.innerHTML = btns + add;
 }
 
 function render() {
   els.fechaHoy.textContent = hoyLabel();
-  const t = totales();
+  const t = S.totales(state);
   els.plata.textContent = formatARS(t.disponible);
   els.cobrado.textContent = formatARS(t.cobrado);
   els.gastado.textContent = formatARS(t.gastado);
   els.ahorrado.textContent = formatARS(t.ahorrado);
+  els.ahorroTotalWrap.hidden = !state.ahorroActivo;
 
   const ordenados = [...state.movimientos].sort((a, b) =>
     a.fechaISO < b.fechaISO ? 1 : a.fechaISO > b.fechaISO ? -1 : b.createdAt - a.createdAt
@@ -203,13 +195,17 @@ function render() {
       return `
       <li>
         <div class="meta">
-          <strong>${mov.nombre}</strong>
+          <strong>${escapeHtml(mov.nombre)}</strong>
+          ${mov.nota ? `<span class="nota">${escapeHtml(mov.nota)}</span>` : ""}
           <span>${formatFechaCorta(mov.fechaISO)}</span>
         </div>
         <div class="monto ${mov.tipo}">${signo}${formatARS(mov.monto)}</div>
-        <button type="button" class="btn-borrar" data-del="${mov.id}" aria-label="Borrar">
-          Borrar
-        </button>
+        <div class="acciones">
+          <button type="button" class="btn-editar" data-edit="${mov.id}">Editar</button>
+          <button type="button" class="btn-borrar" data-del="${mov.id}" aria-label="Borrar">
+            Borrar
+          </button>
+        </div>
       </li>`;
     })
     .join("");
@@ -217,94 +213,208 @@ function render() {
   els.empty.hidden = ordenados.length > 0;
 }
 
-function formatFechaCorta(iso) {
-  const [y, m, d] = iso.split("-").map(Number);
-  const date = new Date(y, m - 1, d);
-  return new Intl.DateTimeFormat("es-AR", {
-    day: "numeric",
-    month: "short",
-  }).format(date);
+function refrescar() {
+  renderCategorias();
+  render();
 }
 
-function abrirModalMonto(cat) {
-  categoriaActiva = cat;
-  els.modalSub.textContent = textoModalPorTipo(cat.tipo);
+function abrirModalMonto(card) {
+  cardActiva = card;
+  els.modalTitulo.textContent = card.nombre;
+  els.modalSub.textContent = textoModalPorTipo(card.tipo);
   els.inputMonto.value = "";
-  const esOtros = cat.id === "otros";
-  if (esOtros) {
-    els.modalTitulo.hidden = true;
-    els.inputNombreOtros.hidden = false;
-    els.inputNombreOtros.value = "";
-    els.inputNombreOtros.placeholder = "Nombre del gasto";
-    els.modalSheetMonto.setAttribute("aria-labelledby", "input-nombre-otros");
-  } else {
-    els.inputNombreOtros.hidden = true;
-    els.inputNombreOtros.value = "";
-    els.modalTitulo.hidden = false;
-    els.modalTitulo.textContent = cat.nombre;
-    els.modalSheetMonto.setAttribute("aria-labelledby", "modal-titulo");
-  }
+  els.inputNota.value = "";
   els.modalMonto.hidden = false;
-  setTimeout(() => {
-    if (esOtros) els.inputNombreOtros.focus();
-    else els.inputMonto.focus();
-  }, 50);
+  setTimeout(() => els.inputMonto.focus(), 50);
+}
+
+function abrirModalCrearCard() {
+  poblarSelectTipoCard();
+  els.inputNombreCard.value = "";
+  els.modalCrearCard.hidden = false;
+  setTimeout(() => els.inputNombreCard.focus(), 50);
+}
+
+function poblarSelectTipoCard() {
+  const opciones = state.ahorroActivo
+    ? [
+        ["ingreso", "Ingreso"],
+        ["gasto", "Egreso"],
+        ["aporte", "Aporte a ahorro"],
+        ["retiro", "Retiro de ahorro"],
+      ]
+    : [
+        ["ingreso", "Ingreso"],
+        ["gasto", "Egreso"],
+      ];
+  els.selectTipoCard.innerHTML = opciones
+    .map(([valor, etiqueta]) => `<option value="${valor}">${etiqueta}</option>`)
+    .join("");
+}
+
+function abrirModalEditarMonto(mov) {
+  movEditandoId = mov.id;
+  els.editarMontoSub.textContent = mov.nota ? `${mov.nombre} — ${mov.nota}` : mov.nombre;
+  els.inputEditarMonto.value = mov.monto;
+  els.modalEditarMonto.hidden = false;
+  setTimeout(() => els.inputEditarMonto.focus(), 50);
+}
+
+function abrirModalAjustes() {
+  els.inputSaldo.value = state.saldoInicial || "";
+  els.inputSaldoAhorro.value = state.saldoAhorroInicial || "";
+  els.toggleAhorro.checked = state.ahorroActivo;
+  els.bloqueSaldoAhorro.hidden = !state.ahorroActivo;
+  renderListaCardsAjustes();
+  els.modalAjustes.hidden = false;
+  setTimeout(() => els.inputSaldo.focus(), 50);
+}
+
+function renderListaCardsAjustes() {
+  els.listaCardsAjustes.innerHTML = state.cards
+    .map(
+      (card) => `
+    <li>
+      <input type="text" value="${escapeHtml(card.nombre)}" maxlength="40" data-rename="${card.id}" />
+      <button type="button" class="btn-secondary" data-guardar-nombre="${card.id}">Guardar</button>
+      <button type="button" class="btn-borrar" data-borrar-card="${card.id}" ${card.obligatoria ? "disabled" : ""}>Borrar</button>
+    </li>`
+    )
+    .join("");
 }
 
 function cerrarModales() {
   els.modalMonto.hidden = true;
+  els.modalCrearCard.hidden = true;
+  els.modalEditarMonto.hidden = true;
   els.modalAjustes.hidden = true;
-  els.inputNombreOtros.value = "";
-  els.inputNombreOtros.hidden = true;
-  els.modalTitulo.hidden = false;
-  els.modalSheetMonto.setAttribute("aria-labelledby", "modal-titulo");
-  categoriaActiva = null;
+  cardActiva = null;
+  movEditandoId = null;
 }
 
 function guardarMovimiento() {
-  if (!categoriaActiva) return;
-  const monto = Number(String(els.inputMonto.value).replace(",", "."));
-  if (!Number.isFinite(monto) || monto <= 0) {
-    showToast("Poné un monto válido");
+  if (!cardActiva) return;
+  const resultado = S.agregarMovimiento(state, {
+    cardId: cardActiva.id,
+    monto: els.inputMonto.value,
+    nota: els.inputNota.value,
+  });
+  if (!resultado.ok) {
+    showToast(resultado.error);
     els.inputMonto.focus();
     return;
   }
-
-  const tipo = categoriaActiva.tipo;
-  const nombre =
-    categoriaActiva.id === "otros"
-      ? els.inputNombreOtros.value.trim() || "Otros"
-      : categoriaActiva.nombre;
-  state.movimientos.push({
-    id:
-      (crypto.randomUUID && crypto.randomUUID()) ||
-      `m-${Date.now()}-${Math.random().toString(16).slice(2)}`,
-    categoriaId: categoriaActiva.id,
-    nombre,
-    tipo,
-    monto,
-    fechaISO: hoyISO(),
-    createdAt: Date.now(),
-  });
+  const tipo = cardActiva.tipo;
+  state = resultado.state;
   saveState();
   cerrarModales();
   render();
   showToast(toastPorTipo(tipo));
 }
 
+function guardarCard() {
+  const resultado = S.crearCard(state, {
+    nombre: els.inputNombreCard.value,
+    tipo: els.selectTipoCard.value,
+  });
+  if (!resultado.ok) {
+    showToast(resultado.error);
+    return;
+  }
+  state = resultado.state;
+  saveState();
+  cerrarModales();
+  refrescar();
+  showToast("Card creada");
+}
+
+function guardarEdicionMonto() {
+  if (!movEditandoId) return;
+  const resultado = S.editarMontoMovimiento(state, movEditandoId, els.inputEditarMonto.value);
+  if (!resultado.ok) {
+    showToast(resultado.error);
+    els.inputEditarMonto.focus();
+    return;
+  }
+  state = resultado.state;
+  saveState();
+  cerrarModales();
+  render();
+  showToast("Monto actualizado");
+}
+
 function borrarMovimiento(id) {
-  state.movimientos = state.movimientos.filter((m) => m.id !== id);
+  state = S.borrarMovimiento(state, id);
   saveState();
   render();
   showToast("Borrado");
 }
 
+function guardarAjustes() {
+  const saldo = Number(String(els.inputSaldo.value).replace(",", "."));
+  const saldoAhorro = Number(String(els.inputSaldoAhorro.value).replace(",", "."));
+  if (!Number.isFinite(saldo) || saldo < 0) {
+    showToast("Saldo inválido");
+    return;
+  }
+  if (!Number.isFinite(saldoAhorro) || saldoAhorro < 0) {
+    showToast("Ahorro inicial inválido");
+    return;
+  }
+  state = {
+    ...state,
+    saldoInicial: saldo,
+    saldoAhorroInicial: saldoAhorro,
+    ahorroActivo: els.toggleAhorro.checked,
+  };
+  saveState();
+  cerrarModales();
+  refrescar();
+  showToast("Saldos guardados");
+}
+
+function renombrarCardDesdeAjustes(cardId) {
+  const input = els.listaCardsAjustes.querySelector(`[data-rename="${cardId}"]`);
+  if (!input) return;
+  const resultado = S.renombrarCard(state, cardId, input.value);
+  if (!resultado.ok) {
+    showToast(resultado.error);
+    return;
+  }
+  state = resultado.state;
+  saveState();
+  refrescar();
+  renderListaCardsAjustes();
+  showToast("Nombre actualizado");
+}
+
+function borrarCardDesdeAjustes(cardId) {
+  const resultado = S.borrarCard(state, cardId);
+  if (!resultado.ok) {
+    showToast(resultado.error);
+    return;
+  }
+  state = resultado.state;
+  saveState();
+  refrescar();
+  renderListaCardsAjustes();
+  showToast("Card borrada");
+}
+
+function escapeCsv(value) {
+  const str = String(value);
+  if (str.includes(",") || str.includes('"')) {
+    return `"${str.replaceAll('"', '""')}"`;
+  }
+  return str;
+}
+
 function exportarCSV() {
-  const header = "fecha,tipo,categoria,monto\n";
+  const header = "fecha,tipo,categoria,nota,monto\n";
   const rows = state.movimientos
     .map(
       (m) =>
-        `${m.fechaISO},${m.tipo},${escapeCsv(m.nombre)},${m.monto}`
+        `${m.fechaISO},${m.tipo},${escapeCsv(m.nombre)},${escapeCsv(m.nota || "")},${m.monto}`
     )
     .join("\n");
   const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8" });
@@ -315,13 +425,6 @@ function exportarCSV() {
   a.click();
   URL.revokeObjectURL(url);
   showToast("CSV descargado");
-}
-
-function escapeCsv(value) {
-  if (value.includes(",") || value.includes('"')) {
-    return `"${value.replaceAll('"', '""')}"`;
-  }
-  return value;
 }
 
 let toastTimer;
@@ -336,55 +439,59 @@ function showToast(msg) {
 
 function wireEvents() {
   els.grid.addEventListener("click", (e) => {
+    if (e.target.closest("#btn-agregar-card")) {
+      abrirModalCrearCard();
+      return;
+    }
     const btn = e.target.closest("[data-id]");
     if (!btn) return;
-    const cat = CATEGORIAS.find((c) => c.id === btn.dataset.id);
-    if (cat) abrirModalMonto(cat);
+    const card = state.cards.find((c) => c.id === btn.dataset.id);
+    if (card) abrirModalMonto(card);
   });
 
   els.btnGuardar.addEventListener("click", guardarMovimiento);
-  els.inputNombreOtros.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      els.inputMonto.focus();
-    }
-  });
   els.inputMonto.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") els.inputNota.focus();
+  });
+  els.inputNota.addEventListener("keydown", (e) => {
     if (e.key === "Enter") guardarMovimiento();
   });
 
+  els.btnGuardarCard.addEventListener("click", guardarCard);
+  els.inputNombreCard.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") guardarCard();
+  });
+
+  els.btnGuardarEditarMonto.addEventListener("click", guardarEdicionMonto);
+  els.inputEditarMonto.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") guardarEdicionMonto();
+  });
+
   els.lista.addEventListener("click", (e) => {
-    const btn = e.target.closest("[data-del]");
-    if (!btn) return;
-    borrarMovimiento(btn.dataset.del);
-  });
-
-  els.btnAjustes.addEventListener("click", () => {
-    els.inputSaldo.value = state.saldoInicial || "";
-    els.inputSaldoAhorro.value = state.saldoAhorroInicial || "";
-    els.modalAjustes.hidden = false;
-    setTimeout(() => els.inputSaldo.focus(), 50);
-  });
-
-  els.btnGuardarSaldo.addEventListener("click", () => {
-    const saldo = Number(String(els.inputSaldo.value).replace(",", "."));
-    const saldoAhorro = Number(
-      String(els.inputSaldoAhorro.value).replace(",", ".")
-    );
-    if (!Number.isFinite(saldo) || saldo < 0) {
-      showToast("Saldo inválido");
+    const btnEditar = e.target.closest("[data-edit]");
+    if (btnEditar) {
+      const mov = state.movimientos.find((m) => m.id === btnEditar.dataset.edit);
+      if (mov) abrirModalEditarMonto(mov);
       return;
     }
-    if (!Number.isFinite(saldoAhorro) || saldoAhorro < 0) {
-      showToast("Ahorro inicial inválido");
+    const btnBorrar = e.target.closest("[data-del]");
+    if (btnBorrar) borrarMovimiento(btnBorrar.dataset.del);
+  });
+
+  els.btnAjustes.addEventListener("click", abrirModalAjustes);
+  els.toggleAhorro.addEventListener("change", () => {
+    els.bloqueSaldoAhorro.hidden = !els.toggleAhorro.checked;
+  });
+  els.btnGuardarSaldo.addEventListener("click", guardarAjustes);
+
+  els.listaCardsAjustes.addEventListener("click", (e) => {
+    const btnGuardarNombre = e.target.closest("[data-guardar-nombre]");
+    if (btnGuardarNombre) {
+      renombrarCardDesdeAjustes(btnGuardarNombre.dataset.guardarNombre);
       return;
     }
-    state.saldoInicial = saldo;
-    state.saldoAhorroInicial = saldoAhorro;
-    saveState();
-    cerrarModales();
-    render();
-    showToast("Saldos guardados");
+    const btnBorrarCard = e.target.closest("[data-borrar-card]");
+    if (btnBorrarCard) borrarCardDesdeAjustes(btnBorrarCard.dataset.borrarCard);
   });
 
   els.btnExportar.addEventListener("click", exportarCSV);
@@ -416,8 +523,7 @@ function registerSW() {
   });
 }
 
-renderCategorias();
+refrescar();
 wireEvents();
-render();
 setupInstallHint();
 registerSW();
