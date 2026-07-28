@@ -5,7 +5,8 @@
   "description": "Gestor simple de gastos + PWA para el celular",
   "scripts": {
     "generar": "node generar_plantilla.js",
-    "pwa": "npx --yes serve pwa -p 4173"
+    "pwa": "npx --yes serve pwa -p 4173",
+    "test": "node --test pwa/state.test.js"
   },
   "dependencies": {
     "exceljs": "^4.4.0"

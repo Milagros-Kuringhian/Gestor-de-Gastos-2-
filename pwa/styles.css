@@ -256,6 +256,16 @@ body {
   color: #163a66;
 }
 
+.cat-btn.add-card {
+  border-style: dashed;
+  background: transparent;
+  color: var(--muted);
+}
+
+.cat-btn.add-card .name {
+  color: var(--ink);
+}
+
 .historial-head {
   display: flex;
   align-items: center;
@@ -302,6 +312,13 @@ body {
   font-size: 0.78rem;
 }
 
+.lista .nota {
+  display: block;
+  color: var(--muted);
+  font-size: 0.8rem;
+  font-weight: 400;
+}
+
 .lista .monto {
   font-weight: 600;
   font-size: 0.95rem;
@@ -331,6 +348,15 @@ body {
   font-weight: 500;
   cursor: pointer;
   padding: 0.25rem 0.35rem;
+}
+
+.lista .btn-editar {
+  border: none;
+  background: transparent;
+  color: var(--muted);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
 }
 
 .empty {
@@ -428,6 +454,79 @@ body {
   font-size: 0.85rem;
   font-weight: 500;
   margin-bottom: 0.4rem;
+}
+
+#input-nota,
+#input-nombre-card,
+#select-tipo-card {
+  width: 100%;
+  margin: 0.5rem 0 1rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--card);
+  color: var(--ink);
+  font: inherit;
+}
+
+.toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 1rem 0;
+  font-weight: 600;
+}
+
+.lista-cards-ajustes {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 1rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.lista-cards-ajustes li {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 0.4rem;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid var(--line);
+}
+
+.ajuste-card-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  min-width: 0;
+}
+
+.tag-mini {
+  font-size: 0.68rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.hint-oculta {
+  font-size: 0.72rem;
+  color: var(--muted);
+  font-style: italic;
+}
+
+.lista-cards-ajustes input[type="text"] {
+  width: 100%;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  font: inherit;
+}
+
+.ajustes-subtitulo {
+  margin: 1rem 0 0.5rem;
+  font-size: 0.95rem;
 }
 
 .monto-wrap {
