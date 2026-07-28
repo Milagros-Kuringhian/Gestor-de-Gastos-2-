@@ -5,6 +5,7 @@ const {
   ensureBaseCards,
   totales,
   crearCard,
+  actualizarCard,
   renombrarCard,
   borrarCard,
   agregarMovimiento,
@@ -280,4 +281,65 @@ test("migrateV1ToV2 activa ahorroActivo cuando hay aportes o retiros", () => {
   };
   const s = migrateV1ToV2(v1);
   assert.equal(s.ahorroActivo, true);
+});
+
+test("crearCard guarda descripcion trim", () => {
+  const r = crearCard(defaultState(), {
+    nombre: "Pádel",
+    tipo: "gasto",
+    descripcion: "  cancha  ",
+  });
+  assert.equal(r.ok, true);
+  const card = r.state.cards.find((c) => c.nombre === "Pádel");
+  assert.equal(card.descripcion, "cancha");
+});
+
+test("crearCard sin descripcion deja string vacío", () => {
+  const r = crearCard(defaultState(), { nombre: "Extra", tipo: "ingreso" });
+  assert.equal(r.ok, true);
+  const card = r.state.cards.find((c) => c.nombre === "Extra");
+  assert.equal(card.descripcion, "");
+});
+
+test("actualizarCard cambia nombre y descripcion y sync movimientos", () => {
+  let s = defaultState();
+  s = crearCard(s, { nombre: "Pádel", tipo: "gasto", descripcion: "vieja" }).state;
+  const card = s.cards.find((c) => c.nombre === "Pádel");
+  s = agregarMovimiento(s, { cardId: card.id, monto: 10, nota: "x" }).state;
+  const r = actualizarCard(s, card.id, {
+    nombre: "Tenis",
+    descripcion: "  club  ",
+  });
+  assert.equal(r.ok, true);
+  const updated = r.state.cards.find((c) => c.id === card.id);
+  assert.equal(updated.nombre, "Tenis");
+  assert.equal(updated.descripcion, "club");
+  assert.equal(r.state.movimientos[0].nombre, "Tenis");
+  assert.equal(r.state.movimientos[0].nota, "x");
+});
+
+test("actualizarCard permite descripcion vacía", () => {
+  let s = defaultState();
+  s = crearCard(s, { nombre: "Pádel", tipo: "gasto", descripcion: "algo" }).state;
+  const card = s.cards.find((c) => c.nombre === "Pádel");
+  const r = actualizarCard(s, card.id, { nombre: "Pádel", descripcion: "   " });
+  assert.equal(r.ok, true);
+  assert.equal(r.state.cards.find((c) => c.id === card.id).descripcion, "");
+});
+
+test("normalizeState rellena descripcion faltante", () => {
+  const s = normalizeState({
+    cards: [
+      { id: "card-ingreso-base", nombre: "Ingreso", tipo: "ingreso", obligatoria: true },
+      { id: "card-egreso-base", nombre: "Egreso", tipo: "gasto", obligatoria: true },
+      { id: "c1", nombre: "Extra", tipo: "gasto", obligatoria: false },
+    ],
+    movimientos: [],
+  });
+  assert.equal(s.cards.find((c) => c.id === "c1").descripcion, "");
+});
+
+test("defaultState cards tienen descripcion vacía", () => {
+  const s = defaultState();
+  assert.ok(s.cards.every((c) => c.descripcion === ""));
 });

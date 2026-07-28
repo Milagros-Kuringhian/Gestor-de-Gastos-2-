@@ -20,12 +20,14 @@ const MiPlataState = (() => {
         {
           id: CARD_INGRESO_BASE_ID,
           nombre: "Ingreso",
+          descripcion: "",
           tipo: "ingreso",
           obligatoria: true,
         },
         {
           id: CARD_EGRESO_BASE_ID,
           nombre: "Egreso",
+          descripcion: "",
           tipo: "gasto",
           obligatoria: true,
         },
@@ -40,6 +42,7 @@ const MiPlataState = (() => {
       cards.unshift({
         id: CARD_INGRESO_BASE_ID,
         nombre: "Ingreso",
+        descripcion: "",
         tipo: "ingreso",
         obligatoria: true,
       });
@@ -48,6 +51,7 @@ const MiPlataState = (() => {
       cards.push({
         id: CARD_EGRESO_BASE_ID,
         nombre: "Egreso",
+        descripcion: "",
         tipo: "gasto",
         obligatoria: true,
       });
@@ -58,6 +62,17 @@ const MiPlataState = (() => {
   function todayISO() {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  }
+
+  function normalizeCard(c) {
+    const item = c && typeof c === "object" ? c : {};
+    return {
+      id: item.id,
+      nombre: item.nombre || "",
+      descripcion: String(item.descripcion || "").trim(),
+      tipo: item.tipo || "gasto",
+      obligatoria: Boolean(item.obligatoria),
+    };
   }
 
   function normalizeMovimiento(m) {
@@ -85,7 +100,10 @@ const MiPlataState = (() => {
       saldoInicial: Number(src.saldoInicial) || 0,
       saldoAhorroInicial: Number(src.saldoAhorroInicial) || 0,
       ahorroActivo: Boolean(src.ahorroActivo),
-      cards: Array.isArray(src.cards) && src.cards.length ? src.cards : base.cards,
+      cards:
+        Array.isArray(src.cards) && src.cards.length
+          ? src.cards.map(normalizeCard)
+          : base.cards,
       movimientos: movimientosRaw.map(normalizeMovimiento),
     };
     return ensureBaseCards(merged);
@@ -103,6 +121,7 @@ const MiPlataState = (() => {
         byCat.set(cid, {
           id: `card-migrated-${cid}`,
           nombre: m.nombre || cid,
+          descripcion: "",
           tipo: m.tipo || "gasto",
           obligatoria: false,
         });
@@ -181,7 +200,7 @@ const MiPlataState = (() => {
     return state.cards.filter((c) => c.tipo !== "aporte" && c.tipo !== "retiro");
   }
 
-  function crearCard(state, { nombre, tipo }) {
+  function crearCard(state, { nombre, tipo, descripcion }) {
     const name = String(nombre || "").trim();
     if (!name) return { ok: false, error: "Poné un nombre" };
     const allowed = state.ahorroActivo
@@ -191,25 +210,36 @@ const MiPlataState = (() => {
     const card = {
       id: newId("card"),
       nombre: name,
+      descripcion: String(descripcion || "").trim(),
       tipo,
       obligatoria: false,
     };
     return { ok: true, state: { ...state, cards: [...state.cards, card] } };
   }
 
-  function renombrarCard(state, cardId, nombre) {
+  function actualizarCard(state, cardId, { nombre, descripcion }) {
     const name = String(nombre || "").trim();
     if (!name) return { ok: false, error: "Poné un nombre" };
-    const cards = state.cards.map((c) =>
-      c.id === cardId ? { ...c, nombre: name } : c
-    );
-    if (!cards.some((c) => c.id === cardId)) {
+    const desc = String(descripcion ?? "").trim();
+    if (!state.cards.some((c) => c.id === cardId)) {
       return { ok: false, error: "Card no encontrada" };
     }
+    const cards = state.cards.map((c) =>
+      c.id === cardId ? { ...c, nombre: name, descripcion: desc } : c
+    );
     const movimientos = state.movimientos.map((m) =>
       m.cardId === cardId ? { ...m, nombre: name } : m
     );
     return { ok: true, state: { ...state, cards, movimientos } };
+  }
+
+  function renombrarCard(state, cardId, nombre) {
+    const card = state.cards.find((c) => c.id === cardId);
+    if (!card) return { ok: false, error: "Card no encontrada" };
+    return actualizarCard(state, cardId, {
+      nombre,
+      descripcion: card.descripcion || "",
+    });
   }
 
   function borrarCard(state, cardId) {
@@ -294,6 +324,7 @@ const MiPlataState = (() => {
     normalizeState,
     totales,
     crearCard,
+    actualizarCard,
     renombrarCard,
     borrarCard,
     agregarMovimiento,

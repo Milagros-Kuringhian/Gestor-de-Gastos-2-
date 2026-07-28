@@ -24,7 +24,7 @@
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=8" />
+    <link rel="stylesheet" href="styles.css?v=9" />
   </head>
   <body>
     <div class="grain" aria-hidden="true"></div>
@@ -112,6 +112,14 @@
         </select>
         <label for="input-nombre-card">Nombre</label>
         <input id="input-nombre-card" type="text" maxlength="40" placeholder="Ej. Pádel" autocomplete="off" />
+        <label for="input-descripcion-card">Descripción (opcional)</label>
+        <input
+          id="input-descripcion-card"
+          type="text"
+          maxlength="60"
+          placeholder="Ej. cancha los martes"
+          autocomplete="off"
+        />
         <div class="modal-actions">
           <button type="button" class="btn-secondary" data-close>Cancelar</button>
           <button type="button" class="btn-primary" id="btn-guardar-card">Crear</button>
@@ -178,6 +186,9 @@
         </p>
         <h4 class="ajustes-subtitulo">Tus cards</h4>
         <ul id="lista-cards-ajustes" class="lista-cards-ajustes"></ul>
+        <button type="button" class="btn-secondary" id="btn-agregar-card-ajustes">
+          Agregar card
+        </button>
         <div class="modal-actions">
           <button type="button" class="btn-secondary" data-close>Cerrar</button>
           <button type="button" class="btn-primary" id="btn-guardar-saldo">
@@ -189,7 +200,7 @@
 
     <div class="toast" id="toast" hidden></div>
 
-    <script src="state.js?v=8"></script>
-    <script src="app.js?v=8"></script>
+    <script src="state.js?v=9"></script>
+    <script src="app.js?v=9"></script>
   </body>
 </html>

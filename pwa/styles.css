@@ -247,6 +247,15 @@ body {
   color: var(--ink);
 }
 
+.cat-btn .desc {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--muted);
+  line-height: 1.25;
+}
+
 .cat-btn.gasto .name {
   color: #7c2d12;
 }
@@ -264,6 +273,11 @@ body {
 
 .cat-btn.add-card .name {
   color: var(--ink);
+}
+
+#btn-agregar-card-ajustes {
+  width: 100%;
+  margin: 0 0 1rem;
 }
 
 .historial-head {
@@ -392,6 +406,10 @@ body {
   align-items: end;
 }
 
+#modal-crear-card {
+  z-index: 21;
+}
+
 .modal-backdrop {
   position: absolute;
   inset: 0;
@@ -490,7 +508,7 @@ body {
   display: grid;
   grid-template-columns: 1fr auto auto;
   gap: 0.4rem;
-  align-items: center;
+  align-items: start;
   padding: 0.5rem 0;
   border-bottom: 1px solid var(--line);
 }
