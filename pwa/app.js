@@ -292,7 +292,8 @@ function renderListaCardsAjustes() {
     <li>
       <div class="ajuste-card-info">
         <span class="tag-mini">${S.tagPorTipo(card.tipo)}</span>
-        <input type="text" value="${escapeHtml(card.nombre)}" maxlength="40" data-rename="${card.id}" />
+        <input type="text" value="${escapeHtml(card.nombre)}" maxlength="40" data-rename="${card.id}" aria-label="Nombre" />
+        <input type="text" value="${escapeHtml(card.descripcion || "")}" maxlength="60" data-desc="${card.id}" placeholder="Descripción (opcional)" aria-label="Descripción" />
         ${hint}
       </div>
       <button type="button" class="btn-secondary" data-guardar-nombre="${card.id}">Guardar</button>
@@ -401,10 +402,14 @@ function guardarAjustes() {
   showToast("Saldos guardados");
 }
 
-function renombrarCardDesdeAjustes(cardId) {
-  const input = els.listaCardsAjustes.querySelector(`[data-rename="${cardId}"]`);
-  if (!input) return;
-  const resultado = S.renombrarCard(state, cardId, input.value);
+function actualizarCardDesdeAjustes(cardId) {
+  const inputNombre = els.listaCardsAjustes.querySelector(`[data-rename="${cardId}"]`);
+  const inputDesc = els.listaCardsAjustes.querySelector(`[data-desc="${cardId}"]`);
+  if (!inputNombre) return;
+  const resultado = S.actualizarCard(state, cardId, {
+    nombre: inputNombre.value,
+    descripcion: inputDesc ? inputDesc.value : "",
+  });
   if (!resultado.ok) {
     showToast(resultado.error);
     return;
@@ -412,8 +417,8 @@ function renombrarCardDesdeAjustes(cardId) {
   state = resultado.state;
   saveState();
   refrescar();
-  input.value = state.cards.find((c) => c.id === cardId)?.nombre ?? input.value;
-  showToast("Nombre actualizado");
+  renderListaCardsAjustes();
+  showToast("Card actualizada");
 }
 
 function borrarCardDesdeAjustes(cardId) {
@@ -519,7 +524,7 @@ function wireEvents() {
   els.listaCardsAjustes.addEventListener("click", (e) => {
     const btnGuardarNombre = e.target.closest("[data-guardar-nombre]");
     if (btnGuardarNombre) {
-      renombrarCardDesdeAjustes(btnGuardarNombre.dataset.guardarNombre);
+      actualizarCardDesdeAjustes(btnGuardarNombre.dataset.guardarNombre);
       return;
     }
     const btnBorrarCard = e.target.closest("[data-borrar-card]");
