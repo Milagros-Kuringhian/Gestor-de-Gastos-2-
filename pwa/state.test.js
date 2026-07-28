@@ -13,8 +13,11 @@ const {
   borrarMovimiento,
   tagPorTipo,
   visibleCards,
+  ensureAhorroCards,
   CARD_INGRESO_BASE_ID,
   CARD_EGRESO_BASE_ID,
+  CARD_APORTE_BASE_ID,
+  CARD_RETIRO_BASE_ID,
 } = require("./state.js");
 const test = require("node:test");
 const assert = require("node:assert/strict");
@@ -342,4 +345,54 @@ test("normalizeState rellena descripcion faltante", () => {
 test("defaultState cards tienen descripcion vacía", () => {
   const s = defaultState();
   assert.ok(s.cards.every((c) => c.descripcion === ""));
+});
+
+test("ensureAhorroCards agrega aporte y retiro si faltan", () => {
+  const s = ensureAhorroCards(defaultState());
+  assert.ok(s.cards.some((c) => c.id === CARD_APORTE_BASE_ID && c.tipo === "aporte"));
+  assert.ok(s.cards.some((c) => c.id === CARD_RETIRO_BASE_ID && c.tipo === "retiro"));
+  const aporte = s.cards.find((c) => c.id === CARD_APORTE_BASE_ID);
+  const retiro = s.cards.find((c) => c.id === CARD_RETIRO_BASE_ID);
+  assert.equal(aporte.nombre, "Aporte a ahorro");
+  assert.equal(retiro.nombre, "Retiro de ahorro");
+  assert.equal(aporte.obligatoria, false);
+  assert.equal(retiro.obligatoria, false);
+});
+
+test("ensureAhorroCards no duplica si ya hay aporte/retiro", () => {
+  let s = defaultState();
+  s.ahorroActivo = true;
+  s = crearCard(s, { nombre: "Mi aporte", tipo: "aporte" }).state;
+  s = crearCard(s, { nombre: "Mi retiro", tipo: "retiro" }).state;
+  const before = s.cards.length;
+  const after = ensureAhorroCards(s);
+  assert.equal(after.cards.length, before);
+  assert.ok(!after.cards.some((c) => c.id === CARD_APORTE_BASE_ID));
+  assert.ok(!after.cards.some((c) => c.id === CARD_RETIRO_BASE_ID));
+});
+
+test("ensureAhorroCards solo agrega el tipo que falta", () => {
+  let s = defaultState();
+  s.ahorroActivo = true;
+  s = crearCard(s, { nombre: "Ya aporte", tipo: "aporte" }).state;
+  s = ensureAhorroCards(s);
+  assert.equal(s.cards.filter((c) => c.tipo === "aporte").length, 1);
+  assert.ok(s.cards.some((c) => c.id === CARD_RETIRO_BASE_ID));
+});
+
+test("aporte no suma a gastado; retiro no suma a cobrado", () => {
+  let s = defaultState();
+  s.saldoInicial = 1000;
+  s.ahorroActivo = true;
+  s = ensureAhorroCards(s);
+  s = agregarMovimiento(s, { cardId: CARD_APORTE_BASE_ID, monto: 200, nota: "" }).state;
+  let t = totales(s);
+  assert.equal(t.gastado, 0);
+  assert.equal(t.ahorrado, 200);
+  assert.equal(t.disponible, 800);
+  s = agregarMovimiento(s, { cardId: CARD_RETIRO_BASE_ID, monto: 50, nota: "" }).state;
+  t = totales(s);
+  assert.equal(t.cobrado, 0);
+  assert.equal(t.ahorrado, 150);
+  assert.equal(t.disponible, 850);
 });

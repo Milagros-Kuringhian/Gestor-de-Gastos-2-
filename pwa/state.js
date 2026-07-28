@@ -3,6 +3,8 @@ const MiPlataState = (() => {
   const STORAGE_KEY_V2 = "mi-plata-v2";
   const CARD_INGRESO_BASE_ID = "card-ingreso-base";
   const CARD_EGRESO_BASE_ID = "card-egreso-base";
+  const CARD_APORTE_BASE_ID = "card-aporte-base";
+  const CARD_RETIRO_BASE_ID = "card-retiro-base";
 
   function newId(prefix) {
     if (typeof crypto !== "undefined" && crypto.randomUUID) {
@@ -54,6 +56,29 @@ const MiPlataState = (() => {
         descripcion: "",
         tipo: "gasto",
         obligatoria: true,
+      });
+    }
+    return { ...state, cards };
+  }
+
+  function ensureAhorroCards(state) {
+    const cards = [...(state.cards || [])];
+    if (!cards.some((c) => c.tipo === "aporte")) {
+      cards.push({
+        id: CARD_APORTE_BASE_ID,
+        nombre: "Aporte a ahorro",
+        descripcion: "",
+        tipo: "aporte",
+        obligatoria: false,
+      });
+    }
+    if (!cards.some((c) => c.tipo === "retiro")) {
+      cards.push({
+        id: CARD_RETIRO_BASE_ID,
+        nombre: "Retiro de ahorro",
+        descripcion: "",
+        tipo: "retiro",
+        obligatoria: false,
       });
     }
     return { ...state, cards };
@@ -318,9 +343,12 @@ const MiPlataState = (() => {
     STORAGE_KEY_V2,
     CARD_INGRESO_BASE_ID,
     CARD_EGRESO_BASE_ID,
+    CARD_APORTE_BASE_ID,
+    CARD_RETIRO_BASE_ID,
     defaultState,
     migrateV1ToV2,
     ensureBaseCards,
+    ensureAhorroCards,
     normalizeState,
     totales,
     crearCard,

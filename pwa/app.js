@@ -52,7 +52,9 @@ function loadState() {
   try {
     const rawV2 = localStorage.getItem(S.STORAGE_KEY_V2);
     if (rawV2) {
-      return S.normalizeState(JSON.parse(rawV2));
+      let loaded = S.normalizeState(JSON.parse(rawV2));
+      if (loaded.ahorroActivo) loaded = S.ensureAhorroCards(loaded);
+      return loaded;
     }
     const rawV1 = localStorage.getItem(S.STORAGE_KEY_V1);
     if (rawV1) {
@@ -63,6 +65,7 @@ function loadState() {
         // Migración a medias: no tocamos v1 ni escribimos v2, arrancamos limpio.
         return S.defaultState();
       }
+      if (migrated.ahorroActivo) migrated = S.ensureAhorroCards(migrated);
       localStorage.setItem(S.STORAGE_KEY_V2, JSON.stringify(migrated));
       localStorage.removeItem(S.STORAGE_KEY_V1);
       return migrated;
@@ -379,6 +382,9 @@ function guardarAjustes() {
     saldoAhorroInicial: saldoAhorro,
     ahorroActivo: els.toggleAhorro.checked,
   };
+  if (state.ahorroActivo) {
+    state = S.ensureAhorroCards(state);
+  }
   saveState();
   cerrarModales();
   refrescar();
