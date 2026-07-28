@@ -24,7 +24,7 @@
       href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="styles.css?v=9" />
+    <link rel="stylesheet" href="styles.css?v=10" />
   </head>
   <body>
     <div class="grain" aria-hidden="true"></div>
@@ -66,9 +66,6 @@
       <section class="historial">
         <div class="historial-head">
           <h2>Últimos movimientos</h2>
-          <button type="button" class="ghost-btn" id="btn-exportar">
-            Exportar CSV
-          </button>
         </div>
         <ul id="lista-movimientos" class="lista"></ul>
         <p class="empty" id="empty-state">Todavía no anotaste nada.</p>
@@ -112,14 +109,6 @@
         </select>
         <label for="input-nombre-card">Nombre</label>
         <input id="input-nombre-card" type="text" maxlength="40" placeholder="Ej. Pádel" autocomplete="off" />
-        <label for="input-descripcion-card">Descripción (opcional)</label>
-        <input
-          id="input-descripcion-card"
-          type="text"
-          maxlength="60"
-          placeholder="Ej. cancha los martes"
-          autocomplete="off"
-        />
         <div class="modal-actions">
           <button type="button" class="btn-secondary" data-close>Cancelar</button>
           <button type="button" class="btn-primary" id="btn-guardar-card">Crear</button>

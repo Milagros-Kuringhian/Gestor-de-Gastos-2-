@@ -423,6 +423,10 @@ body {
   padding: 1.25rem 1.15rem calc(1.25rem + var(--safe-bottom));
   box-shadow: var(--shadow);
   animation: sheet 0.22s ease;
+  max-height: calc(100dvh - 1.5rem);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
 }
 
 .modal-sheet h3 {
