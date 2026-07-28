@@ -23,7 +23,6 @@ const els = {
   modalCrearCard: $("#modal-crear-card"),
   selectTipoCard: $("#select-tipo-card"),
   inputNombreCard: $("#input-nombre-card"),
-  inputDescripcionCard: $("#input-descripcion-card"),
   btnGuardarCard: $("#btn-guardar-card"),
 
   modalEditarMonto: $("#modal-editar-monto"),
@@ -41,7 +40,6 @@ const els = {
   btnGuardarSaldo: $("#btn-guardar-saldo"),
   btnAgregarCardAjustes: $("#btn-agregar-card-ajustes"),
 
-  btnExportar: $("#btn-exportar"),
   installHint: $("#install-hint"),
   toast: $("#toast"),
 };
@@ -103,14 +101,6 @@ function hoyLabel() {
   }).format(new Date());
 }
 
-function hoyISO() {
-  const d = new Date();
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
 function formatFechaCorta(iso) {
   const [y, m, d] = iso.split("-").map(Number);
   const date = new Date(y, m - 1, d);
@@ -167,14 +157,10 @@ function renderCategorias() {
   const cards = S.visibleCards(state);
   const btns = cards
     .map((cat) => {
-      const desc = cat.descripcion
-        ? `<span class="desc">${escapeHtml(cat.descripcion)}</span>`
-        : "";
       return `
     <button type="button" class="cat-btn ${cat.tipo}" data-id="${cat.id}">
       <span class="tag">${S.tagPorTipo(cat.tipo)}</span>
       <span class="name">${escapeHtml(cat.nombre)}</span>
-      ${desc}
     </button>`;
     })
     .join("");
@@ -242,7 +228,6 @@ function abrirModalMonto(card) {
 function abrirModalCrearCard() {
   poblarSelectTipoCard();
   els.inputNombreCard.value = "";
-  els.inputDescripcionCard.value = "";
   els.modalCrearCard.hidden = false;
   setTimeout(() => els.inputNombreCard.focus(), 50);
 }
@@ -293,7 +278,6 @@ function renderListaCardsAjustes() {
       <div class="ajuste-card-info">
         <span class="tag-mini">${S.tagPorTipo(card.tipo)}</span>
         <input type="text" value="${escapeHtml(card.nombre)}" maxlength="40" data-rename="${card.id}" aria-label="Nombre" />
-        <input type="text" value="${escapeHtml(card.descripcion || "")}" maxlength="60" data-desc="${card.id}" placeholder="Descripción (opcional)" aria-label="Descripción" />
         ${hint}
       </div>
       <button type="button" class="btn-secondary" data-guardar-nombre="${card.id}">Guardar</button>
@@ -341,7 +325,6 @@ function guardarCard() {
   const resultado = S.crearCard(state, {
     nombre: els.inputNombreCard.value,
     tipo: els.selectTipoCard.value,
-    descripcion: els.inputDescripcionCard.value,
   });
   if (!resultado.ok) {
     showToast(resultado.error);
@@ -404,12 +387,8 @@ function guardarAjustes() {
 
 function actualizarCardDesdeAjustes(cardId) {
   const inputNombre = els.listaCardsAjustes.querySelector(`[data-rename="${cardId}"]`);
-  const inputDesc = els.listaCardsAjustes.querySelector(`[data-desc="${cardId}"]`);
   if (!inputNombre) return;
-  const resultado = S.actualizarCard(state, cardId, {
-    nombre: inputNombre.value,
-    descripcion: inputDesc ? inputDesc.value : "",
-  });
+  const resultado = S.renombrarCard(state, cardId, inputNombre.value);
   if (!resultado.ok) {
     showToast(resultado.error);
     return;
@@ -433,32 +412,6 @@ function borrarCardDesdeAjustes(cardId) {
   const li = els.listaCardsAjustes.querySelector(`[data-borrar-card="${cardId}"]`)?.closest("li");
   li?.remove();
   showToast("Card borrada");
-}
-
-function escapeCsv(value) {
-  const str = String(value);
-  if (str.includes(",") || str.includes('"')) {
-    return `"${str.replaceAll('"', '""')}"`;
-  }
-  return str;
-}
-
-function exportarCSV() {
-  const header = "fecha,tipo,categoria,nota,monto\n";
-  const rows = state.movimientos
-    .map(
-      (m) =>
-        `${m.fechaISO},${m.tipo},${escapeCsv(m.nombre)},${escapeCsv(m.nota || "")},${m.monto}`
-    )
-    .join("\n");
-  const blob = new Blob([header + rows], { type: "text/csv;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = `mi-plata-${hoyISO()}.csv`;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast("CSV descargado");
 }
 
 let toastTimer;
@@ -493,9 +446,6 @@ function wireEvents() {
 
   els.btnGuardarCard.addEventListener("click", guardarCard);
   els.inputNombreCard.addEventListener("keydown", (e) => {
-    if (e.key === "Enter") guardarCard();
-  });
-  els.inputDescripcionCard.addEventListener("keydown", (e) => {
     if (e.key === "Enter") guardarCard();
   });
 
@@ -533,8 +483,6 @@ function wireEvents() {
     const btnBorrarCard = e.target.closest("[data-borrar-card]");
     if (btnBorrarCard) borrarCardDesdeAjustes(btnBorrarCard.dataset.borrarCard);
   });
-
-  els.btnExportar.addEventListener("click", exportarCSV);
 
   document.querySelectorAll("[data-close]").forEach((el) => {
     el.addEventListener("click", cerrarModales);
