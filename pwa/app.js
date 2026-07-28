@@ -495,6 +495,9 @@ function wireEvents() {
   els.inputNombreCard.addEventListener("keydown", (e) => {
     if (e.key === "Enter") guardarCard();
   });
+  els.inputDescripcionCard.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") guardarCard();
+  });
 
   els.btnGuardarEditarMonto.addEventListener("click", guardarEdicionMonto);
   els.inputEditarMonto.addEventListener("keydown", (e) => {
