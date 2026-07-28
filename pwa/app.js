@@ -23,6 +23,7 @@ const els = {
   modalCrearCard: $("#modal-crear-card"),
   selectTipoCard: $("#select-tipo-card"),
   inputNombreCard: $("#input-nombre-card"),
+  inputDescripcionCard: $("#input-descripcion-card"),
   btnGuardarCard: $("#btn-guardar-card"),
 
   modalEditarMonto: $("#modal-editar-monto"),
@@ -38,6 +39,7 @@ const els = {
   listaCardsAjustes: $("#lista-cards-ajustes"),
   btnAjustes: $("#btn-ajustes"),
   btnGuardarSaldo: $("#btn-guardar-saldo"),
+  btnAgregarCardAjustes: $("#btn-agregar-card-ajustes"),
 
   btnExportar: $("#btn-exportar"),
   installHint: $("#install-hint"),
@@ -164,13 +166,17 @@ function signoPorTipo(tipo) {
 function renderCategorias() {
   const cards = S.visibleCards(state);
   const btns = cards
-    .map(
-      (cat) => `
+    .map((cat) => {
+      const desc = cat.descripcion
+        ? `<span class="desc">${escapeHtml(cat.descripcion)}</span>`
+        : "";
+      return `
     <button type="button" class="cat-btn ${cat.tipo}" data-id="${cat.id}">
       <span class="tag">${S.tagPorTipo(cat.tipo)}</span>
       <span class="name">${escapeHtml(cat.nombre)}</span>
-    </button>`
-    )
+      ${desc}
+    </button>`;
+    })
     .join("");
   const add = `
     <button type="button" class="cat-btn add-card" id="btn-agregar-card">
@@ -236,6 +242,7 @@ function abrirModalMonto(card) {
 function abrirModalCrearCard() {
   poblarSelectTipoCard();
   els.inputNombreCard.value = "";
+  els.inputDescripcionCard.value = "";
   els.modalCrearCard.hidden = false;
   setTimeout(() => els.inputNombreCard.focus(), 50);
 }
@@ -296,6 +303,10 @@ function renderListaCardsAjustes() {
 }
 
 function cerrarModales() {
+  if (!els.modalCrearCard.hidden && !els.modalAjustes.hidden) {
+    els.modalCrearCard.hidden = true;
+    return;
+  }
   els.modalMonto.hidden = true;
   els.modalCrearCard.hidden = true;
   els.modalEditarMonto.hidden = true;
@@ -325,9 +336,11 @@ function guardarMovimiento() {
 }
 
 function guardarCard() {
+  const desdeAjustes = !els.modalAjustes.hidden;
   const resultado = S.crearCard(state, {
     nombre: els.inputNombreCard.value,
     tipo: els.selectTipoCard.value,
+    descripcion: els.inputDescripcionCard.value,
   });
   if (!resultado.ok) {
     showToast(resultado.error);
@@ -335,7 +348,10 @@ function guardarCard() {
   }
   state = resultado.state;
   saveState();
-  cerrarModales();
+  els.modalCrearCard.hidden = true;
+  if (desdeAjustes) {
+    renderListaCardsAjustes();
+  }
   refrescar();
   showToast("Card creada");
 }
@@ -496,6 +512,9 @@ function wireEvents() {
     els.bloqueSaldoAhorro.hidden = !els.toggleAhorro.checked;
   });
   els.btnGuardarSaldo.addEventListener("click", guardarAjustes);
+  els.btnAgregarCardAjustes.addEventListener("click", () => {
+    abrirModalCrearCard();
+  });
 
   els.listaCardsAjustes.addEventListener("click", (e) => {
     const btnGuardarNombre = e.target.closest("[data-guardar-nombre]");

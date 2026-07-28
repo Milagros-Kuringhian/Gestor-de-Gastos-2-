@@ -247,6 +247,15 @@ body {
   color: var(--ink);
 }
 
+.cat-btn .desc {
+  display: block;
+  margin-top: 0.15rem;
+  font-size: 0.78rem;
+  font-weight: 400;
+  color: var(--muted);
+  line-height: 1.25;
+}
+
 .cat-btn.gasto .name {
   color: #7c2d12;
 }
@@ -264,6 +273,11 @@ body {
 
 .cat-btn.add-card .name {
   color: var(--ink);
+}
+
+#btn-agregar-card-ajustes {
+  width: 100%;
+  margin: 0 0 1rem;
 }
 
 .historial-head {
@@ -390,6 +404,10 @@ body {
   z-index: 20;
   display: grid;
   align-items: end;
+}
+
+#modal-crear-card {
+  z-index: 21;
 }
 
 .modal-backdrop {
